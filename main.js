@@ -7,9 +7,9 @@ let n=0;
 Deno.serve(async(r)=>{
 const u=new URL(r.url);
 if(r.method==="OPTIONS")return new Response(null,{headers:{"Access-Control-Allow-Origin":"*"}});
-if(u.pathname==="/")return new Response(JSON.stringify({ok:true,requests:n}),{headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":"*"}});
+// 先检查 url 参数，再检查根路径
 const t=u.searchParams.get("url");
-if(!t)return new Response("?url= required",{status:400});
+if(t){
 n++;
 try{
 const h=new URL(t);
@@ -23,7 +23,7 @@ headers:{
 },
 redirect:"follow"
 });
-if(!resp.ok)return new Response(`Error ${resp.status}`,{status:502});
+if(!resp.ok)return new Response("Error "+resp.status,{status:502});
 const body=await resp.arrayBuffer();
 return new Response(body,{headers:{
 "Access-Control-Allow-Origin":"*",
@@ -31,9 +31,9 @@ return new Response(body,{headers:{
 "Content-Type":resp.headers.get("content-type")||"image/webp",
 }});
 }catch(e){return new Response(e.message,{status:502});}
+}
+return new Response(JSON.stringify({ok:true,requests:n}),{headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":"*"}});
 });
-    const r = await fetch(target, {headers:h, redirect:"follow"});
-    if (r.status===429) return new Response("⏳ 限流中，请稍后重试",{status:429,headers:{"Access-Control-Allow-Origin":"*"}});
     if (!r.ok) return new Response(`Error ${r.status}`,{status:r.status});
     const ct = r.headers.get("content-type")||"";
     if (ct.includes("text/html")) {
