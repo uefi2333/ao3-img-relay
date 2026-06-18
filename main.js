@@ -15,12 +15,13 @@ function rewrite(body) {
   body = body.replace(/<meta[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/gi,"");
   body = body.replace(/<head>/i,'<head><meta name="referrer" content="no-referrer">');
   body = body.replace(/(href|action|value|src|content)=["']https?:\/\/(www\.)?archiveofourown\.org/gi,'$1="');
+  body = body.replace(/(src|data-src|poster)=["'](\/(?:uploads|images)\/[^"']+)["']/gi,(m,a,p)=>a+'="'+AO3_BASE+p+'"');
   return body;
 }
 Deno.serve(async (r) => {
   const u = new URL(r.url);
   if (r.method === "OPTIONS") return new Response(null, {headers: {"Access-Control-Allow-Origin": "*"}});
-  // 1) 图片中继模式: /?url=xxx
+  // 图片中继: /?url=xxx
   const t = u.searchParams.get("url");
   if (t) {
     n++;
@@ -32,8 +33,9 @@ Deno.serve(async (r) => {
       return new Response(body, {headers: {"Access-Control-Allow-Origin": "*", "Cache-Control": "public, max-age=86400", "Content-Type": resp.headers.get("content-type") || "image/webp"}});
     } catch (e) { return new Response(e.message, {status: 502}); }
   }
-  // 2) 全代理模式: /works/123 → archiveofourown.org/works/123
-  if (u.pathname === "/") return new Response(JSON.stringify({ok: true, requests: n, version: "full-proxy-v2"}), {headers: {"Content-Type": "application/json", "Access-Control-Allow-Origin": "*"}});
+  // 健康检查: /_health
+  if (u.pathname === "/_health") return new Response(JSON.stringify({ok:true,requests:n}), {headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":"*"}});
+  // 全代理: /, /works/123, /tags/xxx 等
   n++;
   const target = AO3_BASE + u.pathname + u.search;
   const isImg = /\.(jpg|jpeg|png|gif|webp|svg|ico|avif)(\?.*)?$/i.test(u.pathname);
