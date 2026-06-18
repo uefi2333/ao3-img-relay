@@ -7,7 +7,6 @@ let n=0;
 Deno.serve(async(r)=>{
 const u=new URL(r.url);
 if(r.method==="OPTIONS")return new Response(null,{headers:{"Access-Control-Allow-Origin":"*"}});
-// 先检查 url 参数，再检查根路径
 const t=u.searchParams.get("url");
 if(t){
 n++;
@@ -33,15 +32,4 @@ return new Response(body,{headers:{
 }catch(e){return new Response(e.message,{status:502});}
 }
 return new Response(JSON.stringify({ok:true,requests:n}),{headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":"*"}});
-});
-    if (!r.ok) return new Response(`Error ${r.status}`,{status:r.status});
-    const ct = r.headers.get("content-type")||"";
-    if (ct.includes("text/html")) {
-      let body = await r.text();
-      body = rewrite(body);
-      return new Response(body,{headers:{"Content-Type":"text/html; charset=utf-8","Access-Control-Allow-Origin":"*","Cache-Control":"no-cache"}});
-    }
-    return new Response(r.body,{headers:{"Access-Control-Allow-Origin":"*","Cache-Control":"public, max-age=86400","Content-Type":ct}});
-  } catch(e) { return new Response(e.message,{status:502}); }
-});
 });
